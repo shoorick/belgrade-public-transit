@@ -20,9 +20,14 @@ def test_parse_absolute_date(date, expected):
 @pytest.mark.parametrize(
     "date,expected",
     [
-        (datetime(2026, 1, 2), ["RD"]),
-        (datetime(2026, 1, 3), ["S"]),
-        (datetime(2026, 1, 4), ["N"]),
+        # Common days
+        (datetime(2026, 1, 2), {"RD"}),
+        (datetime(2026, 1, 3), {"S"}),
+        (datetime(2026, 1, 4), {"N"}),
+        # Holidays
+        (datetime(2025, 1, 1), {"N"}),
+        (datetime(2024, 11, 11), {"N"}),
+        (datetime(2024, 1, 1), {"N"}),
     ]
 )
 def test_detect_service_type(date, expected):

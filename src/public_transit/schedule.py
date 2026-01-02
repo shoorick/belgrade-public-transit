@@ -64,13 +64,30 @@ def detect_service_type(dt: datetime):
     """
     column = calendar.day_name[dt.weekday()].lower()
 
+    date_key = int(dt.strftime("%Y%m%d"))
+
     root_dir = project.get_root_dir()
     db_path = project.get_db_path(root_dir)
     with project.connect_db(db_path) as conn:
-        rows = conn.execute(
+        base_rows = conn.execute(
             f'SELECT service_id FROM calendar WHERE "{column}" = 1'
         ).fetchall()
-    return [service_id for (service_id,) in rows]
+
+        service_ids = {service_id for (service_id,) in base_rows}
+
+        exception_rows = conn.execute(
+            'SELECT service_id, exception_type FROM calendar_dates WHERE "date" = ?',
+            (date_key,),
+        ).fetchall()
+
+        for service_id, exception_type in exception_rows:
+            if exception_type == 1:
+                service_ids.add(service_id)
+            elif exception_type == 2:
+                service_ids.discard(service_id)
+
+    return service_ids
+
 
 def main() -> int:
     args = parse_args()
@@ -97,8 +114,12 @@ def main() -> int:
     if not service_ids:
         message.write("No matching service_id found", verbosity, message.QUIET)
         return 1
-    message.write(f"service type: {service_ids[0]} ({service_id_names.get(service_ids[0], 'Unknown')})", verbosity)
+    primary_service_id = sorted(service_ids)[0]
+    message.write(
+        f"service type: {primary_service_id} ({service_id_names.get(primary_service_id, 'Unknown')})",
+        verbosity,
+    )
     if verbosity >= message.VERBOSE and len(service_ids) > 1:
-        message.write(f"all service_id: {service_ids}", verbosity, message.VERBOSE)
+        message.write(f"all service_id: {sorted(service_ids)}", verbosity, message.VERBOSE)
 
     return 0
