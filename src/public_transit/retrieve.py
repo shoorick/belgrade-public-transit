@@ -1,4 +1,5 @@
 import os
+import time
 import sqlite3
 import zipfile
 from io import TextIOWrapper
@@ -33,6 +34,9 @@ def url_basename(url: str) -> str:
 
 
 def read_config(repo_root: Path):
+    """
+    Read and parse configuration from YAML file.
+    """
     config_path = repo_root / "config.yaml"
     if not config_path.exists():
         config_path = repo_root / "config.yml"
@@ -41,6 +45,7 @@ def read_config(repo_root: Path):
 
     config = load_config(config_path)
 
+    # Validate configuration
     if not hasattr(config, "data") or not hasattr(config.data, "dir"):
         raise KeyError("Missing config.data.dir in YAML")
     if not hasattr(config.data, "db"):
@@ -51,7 +56,56 @@ def read_config(repo_root: Path):
     return config
 
 
+def parse_expire_seconds(expire) -> float | None:
+    """
+    Parse time value with possible suffixes s/m/h/d/w to seconds.
+    """
+    if expire is None:
+        return None
+
+    if isinstance(expire, (int, float)):
+        return float(expire)
+
+    if isinstance(expire, str):
+        s = expire.strip().lower()
+        if not s:
+            return None
+
+        unit = s[-1]
+        if unit.isdigit():
+            return float(s)
+
+        value = float(s[:-1])
+        multipliers = {
+            "s": 1,
+            "m": 60,
+            "h": 3600,
+            "d": 86400,
+            "w": 604800,
+        }
+        if unit not in multipliers:
+            raise ValueError("Unsupported expire unit; use s/m/h/d/w")
+        return value * multipliers[unit]
+
+    raise TypeError("expire must be a number of seconds or a string like '24h'")
+
+
+def is_path_expired(path: Path, expire_seconds: float | None, now: float | None = None) -> bool:
+    if expire_seconds is None:
+        return False
+
+    if now is None:
+        now = time.time()
+
+    mtime = path.stat().st_mtime
+    age_seconds = now - mtime
+    return age_seconds > expire_seconds
+
+
 def zip_to_sqlite(zip_path: Path, db_path: Path) -> None:
+    """
+    Convert GTFS zip archive to SQLite database.
+    """
     db_path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(str(db_path)) as conn:
         with zipfile.ZipFile(str(zip_path), "r") as zf:
@@ -82,8 +136,10 @@ def main() -> int:
     zip_path = data_dir / zip_name
 
     if zip_path.exists():
-        print(f"File already exists: {zip_path}")
-        return 0
+        expire_seconds = parse_expire_seconds(getattr(config.bus, "expire", None))
+        if not is_path_expired(zip_path, expire_seconds):
+            print(f"File already exists: {zip_path}")
+            return 0
 
     print(f"Downloading {config.bus.source} -> {zip_path}")
     urlretrieve(config.bus.source, zip_path)
