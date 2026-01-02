@@ -1,3 +1,4 @@
 gtfs_kit
 pandas
+pytest
 pyyaml
