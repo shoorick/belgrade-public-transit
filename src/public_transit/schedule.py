@@ -1,4 +1,5 @@
 import argparse
+import calendar
 import dateparser
 from datetime import datetime
 import re
@@ -61,16 +62,7 @@ def detect_service_type(dt: datetime):
     """
     Detect service type for the given date.
     """
-    weekday_columns = [
-        "monday",
-        "tuesday",
-        "wednesday",
-        "thursday",
-        "friday",
-        "saturday",
-        "sunday",
-    ]
-    column = weekday_columns[dt.weekday()]
+    column = calendar.day_name[dt.weekday()].lower()
 
     root_dir = project.get_root_dir()
     db_path = project.get_db_path(root_dir)
