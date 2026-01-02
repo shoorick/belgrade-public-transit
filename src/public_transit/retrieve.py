@@ -3,7 +3,6 @@ import os
 import time
 import sqlite3
 import zipfile
-from io import TextIOWrapper
 from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
@@ -84,8 +83,7 @@ def zip_to_sqlite(zip_path: Path, db_path: Path, verbosity: int = 1) -> None:
 
                 table_name = Path(name_in_zip).stem
                 with zf.open(info, "r") as raw:
-                    text_stream = TextIOWrapper(raw, encoding="utf-8", newline="")
-                    df = pd.read_csv(text_stream)
+                    df = pd.read_csv(raw, encoding="utf-8")
                 df.to_sql(table_name, conn, if_exists="replace", index=False)
                 message.write(f"Wrote table: {table_name} ({len(df)} rows)", verbosity, message.VERBOSE)
 
@@ -101,6 +99,14 @@ def parse_args(argv: list[str] | None = None):
         "-v", "--verbose",
         action="store_true",
         help="Show more messages")
+
+    parser.add_argument(
+        "-f",
+        "--force",
+        choices=["download", "parse", "all"],
+        help="Force actions even if data already processed: download GTFS data, parse it and store to database, or both",
+    )
+
     return parser.parse_args(argv)
 
 
@@ -112,6 +118,9 @@ def main() -> int:
     elif args.verbose:
         verbosity = message.VERBOSE
 
+    force_download = args.force in {"download", "all"}
+    force_parse = args.force in {"parse", "all"}
+
     repo_root = Path(__file__).resolve().parents[2]
 
     config = read_config(repo_root)
@@ -122,14 +131,17 @@ def main() -> int:
     zip_name = url_basename(config.bus.source)
     zip_path = data_dir / zip_name
 
-    if zip_path.exists():
+    zip_expired = False
+    if zip_path.exists() and not force_download:
         expire_seconds = parse_time(getattr(config.bus, "expire", None))
-        if not is_path_expired(zip_path, expire_seconds):
+        zip_expired = is_path_expired(zip_path, expire_seconds)
+        if not zip_expired and not force_parse:
             message.write(f"File already exists: {zip_path}", verbosity)
             return 0
 
-    message.write(f"Downloading {config.bus.source} -> {zip_path}", verbosity)
-    urlretrieve(config.bus.source, zip_path)
+    if force_download or (not zip_path.exists()) or zip_expired:
+        message.write(f"Downloading {config.bus.source} -> {zip_path}", verbosity)
+        urlretrieve(config.bus.source, zip_path)
 
     db_path = (data_dir / config.data.db).resolve()
     message.write(f"Writing SQLite DB: {db_path}", verbosity)
