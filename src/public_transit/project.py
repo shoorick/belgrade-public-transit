@@ -19,4 +19,6 @@ def get_db_path(root_dir: Path | None = None) -> Path:
 def connect_db(db_path: Path | None = None) -> sqlite3.Connection:
     if db_path is None:
         db_path = get_db_path()
-    return sqlite3.connect(str(db_path))
+    conn = sqlite3.connect(str(db_path))
+    conn.row_factory = sqlite3.Row
+    return conn

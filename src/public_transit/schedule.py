@@ -4,6 +4,7 @@ import dateparser
 from datetime import datetime
 import re
 import holidays
+from types import SimpleNamespace
 
 import public_transit.message as message
 import public_transit.project as project
@@ -31,6 +32,19 @@ def parse_args(argv: list[str] | None = None):
         "--date",
         type=str,
         help="Date and time: YYYY-MM-DD or HH:MM or any other relative date like Monday or 'in 15 minutes'",
+    )
+    parser.add_argument(
+        "-i",
+        "--interval",
+        type=int,
+        default=30,
+        help="Interval in minutes (default is 30)",
+    )
+    parser.add_argument(
+        "-n",
+        "--name",
+        type=str,
+        help="Stop name (case-insensitive using Latin alphabet) like Kalemegdan or Savski trg",
     )
 
     return parser.parse_args(argv)
@@ -90,6 +104,36 @@ def detect_service_type(dt: datetime):
 
     return service_ids
 
+def get_schedule(service_id: str, dt: datetime, stop_name: str, interval: int):
+    """
+    Get schedule for the given service_id, timestamp, stop name and interval.
+    """
+    start_seconds = dt.hour * 3600 + dt.minute * 60 + dt.second
+    end_seconds = start_seconds + interval * 60
+    with project.connect_db() as conn:
+        rows = conn.execute(
+            """
+                SELECT
+                    st.arrival_time,
+                    r.route_short_name, r.route_long_name, r.route_type,
+                    t.direction_id, t.trip_id
+                FROM stops s
+                LEFT JOIN stop_times st ON st.stop_id = s.stop_id 
+                LEFT JOIN trips t ON t.trip_id = st.trip_id
+                LEFT JOIN routes r ON r.route_id = t.route_id 
+                WHERE lower(s.stop_name) = lower(?)
+                    AND t.service_id = ?
+                    AND (
+                        CAST(substr(st.arrival_time, 1, 2) AS INTEGER) * 3600 +
+                        CAST(substr(st.arrival_time, 4, 2) AS INTEGER) * 60 +
+                        CAST(substr(st.arrival_time, 7, 2) AS INTEGER)
+                    ) BETWEEN ? AND ?
+                ORDER BY arrival_time
+            """,
+            (stop_name, service_id, start_seconds, end_seconds),
+        ).fetchall()
+    return [SimpleNamespace(**dict(row)) for row in rows]
+
 
 def main() -> int:
     args = parse_args()
@@ -116,6 +160,7 @@ def main() -> int:
     if not service_ids:
         message.write("No matching service_id found", verbosity, message.QUIET)
         return 1
+
     primary_service_id = sorted(service_ids)[0]
     message.write(
         f"Service type: {primary_service_id} ({service_id_names.get(primary_service_id, 'Unknown')})",
@@ -124,4 +169,14 @@ def main() -> int:
     if verbosity >= message.VERBOSE and len(service_ids) > 1:
         message.write(f"All service_id: {sorted(service_ids)}", verbosity, message.VERBOSE)
 
+    if args.name:
+        message.write(f"Schedule for {args.name}", verbosity)
+        schedule = get_schedule(primary_service_id, dt, args.name, args.interval)
+        directions = ["→", "←"]
+        types = {0: "Tm 🚋", 3: "A  🚌", 11: "Tb 🚎"}
+
+        for row in schedule:
+            type_emoji = types.get(row.route_type, "Unknn")
+            message.write(f"{row.arrival_time[:5]} {directions[row.direction_id]} {type_emoji} {row.route_short_name}\t{row.route_long_name}", verbosity, message.QUIET)
+        
     return 0
