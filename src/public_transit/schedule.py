@@ -3,6 +3,7 @@ import calendar
 import dateparser
 from datetime import datetime
 import re
+import holidays
 
 import public_transit.message as message
 import public_transit.project as project
@@ -63,6 +64,9 @@ def detect_service_type(dt: datetime):
     Detect service type for the given date.
     """
     column = calendar.day_name[dt.weekday()].lower()
+    rs_holidays = holidays.country_holidays("RS")
+    if dt.date() in rs_holidays:
+        column = "sunday"
 
     date_key = int(dt.strftime("%Y%m%d"))
 
@@ -116,10 +120,10 @@ def main() -> int:
         return 1
     primary_service_id = sorted(service_ids)[0]
     message.write(
-        f"service type: {primary_service_id} ({service_id_names.get(primary_service_id, 'Unknown')})",
+        f"Service type: {primary_service_id} ({service_id_names.get(primary_service_id, 'Unknown')})",
         verbosity,
     )
     if verbosity >= message.VERBOSE and len(service_ids) > 1:
-        message.write(f"all service_id: {sorted(service_ids)}", verbosity, message.VERBOSE)
+        message.write(f"All service_id: {sorted(service_ids)}", verbosity, message.VERBOSE)
 
     return 0
