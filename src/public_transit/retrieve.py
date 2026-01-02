@@ -21,7 +21,7 @@ def url_basename(url: str) -> str:
     return os.path.basename(parsed.path)
 
 
-def parse_expire_seconds(expire) -> float | None:
+def parse_time(expire) -> float | None:
     """
     Parse time value with possible suffixes s/m/h/d/w to seconds.
     """
@@ -123,7 +123,7 @@ def main() -> int:
     zip_path = data_dir / zip_name
 
     if zip_path.exists():
-        expire_seconds = parse_expire_seconds(getattr(config.bus, "expire", None))
+        expire_seconds = parse_time(getattr(config.bus, "expire", None))
         if not is_path_expired(zip_path, expire_seconds):
             message.write(f"File already exists: {zip_path}", verbosity)
             return 0
