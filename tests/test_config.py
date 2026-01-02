@@ -1,3 +1,4 @@
+import pytest
 import re
 from pathlib import Path
 from types import SimpleNamespace
@@ -14,3 +15,7 @@ def test_read_config():
     assert re.fullmatch(r"[\w/\.]+", config.data.db)
     assert re.match(r"^https?://", config.bus.source)
     assert re.match(r"^\d+[wdhms]?$", str(config.bus.expire))
+
+def test_failed_read_config():
+    with pytest.raises(FileNotFoundError):
+        read_config(Path("/nonexistent"))
