@@ -87,6 +87,15 @@ def zip_to_sqlite(zip_path: Path, db_path: Path, verbosity: int = 1) -> None:
                 df.to_sql(table_name, conn, if_exists="replace", index=False)
                 message.write(f"Wrote table: {table_name} ({len(df)} rows)", verbosity, message.VERBOSE)
 
+                for column in df.columns:
+                    if column.lower().endswith("_id"):
+                        index_name = f"idx_{table_name}_{column}"
+                        conn.execute(
+                            f'CREATE INDEX IF NOT EXISTS "{index_name}" '
+                            f'ON "{table_name}" ("{column}")'
+                        )
+                        message.write(f"Created index: {index_name}", verbosity, message.VERBOSE)
+
 
 def parse_args(argv: list[str] | None = None):
     parser = argparse.ArgumentParser(add_help=True)
