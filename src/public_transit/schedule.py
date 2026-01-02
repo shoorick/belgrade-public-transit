@@ -70,9 +70,7 @@ def detect_service_type(dt: datetime):
 
     date_key = int(dt.strftime("%Y%m%d"))
 
-    root_dir = project.get_root_dir()
-    db_path = project.get_db_path(root_dir)
-    with project.connect_db(db_path) as conn:
+    with project.connect_db() as conn:
         base_rows = conn.execute(
             f'SELECT service_id FROM calendar WHERE "{column}" = 1'
         ).fetchall()
