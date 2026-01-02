@@ -1,2 +1,6 @@
 data
 venv
+
+# Cache and temporary files
+__pycache__
+*.pyc
