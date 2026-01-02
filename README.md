@@ -1,8 +1,75 @@
 # Belgrade Public Transit
 
+## Usage
+
+Activate virtual environment, install dependencies:
+
+```bash
+. venv/bin/activate
+make req
+```
+then run required scripts
+
+```bash
+./script_name.py [options]
+```
+
+### Common options
+
+- `-h`, `--help` - show help message
+- `-q`, `--quiet` - suppress unnecessary messages
+- `-v`, `--verbose` - show more messages
+
+### Retrieve data
+
+```bash
+./retrieve.py
+# or
+./retrieve.py --force parse
+```
+### Get schedule
+
+Nearest 30 minutes schedule for a stop name:
+```bash
+./schedule.py -n Kalemegdan
+```
+output example:
+```
+Date and time: 2026-01-02 23:50:03.206447
+Service type: N (Sunday)
+Schedule for Kalemegdan
+23:52 Tm 🚋 2     Pristanište
+23:52 Tm 🚋 2L    Pristanište
+23:54 A  🚌 EKO2  Dorćol /SRC Milan Gale Muškatirović/
+23:55 Tm 🚋 11    Kalemegdan /Donji grad/
+24:03 Tm 🚋 2L    Pristanište
+24:09 A  🚌 EKO2  Dorćol /SRC Milan Gale Muškatirović/
+24:18 A  🚌 EKO2  Dorćol /SRC Milan Gale Muškatirović/
+```
+
+Nearest 30 minutes schedule for a stop name at a specific time:
+```bash
+./schedule.py -n Kalemegdan -d '2026-01-02 12:34'
+# or
+./schedule.py -n Kalemegdan -d 'in 2 hours'
+# or
+./schedule.py -n Kalemegdan -d 'через 3 часа'
+```
+
+Set interval in minutes:
+```bash
+./schedule.py -n Kalemegdan -i 60
+# or even all day
+./schedule.py -n Kalemegdan -d 'tomorrow midnight' -i 1500
+```
+
+## Configuration
+
+Configuration file is [config.yml](config.yml)
+
 ## Source data
 
-### Buses, trolleybuses
+### Buses, trams, trolleybuses
 
 GTFS data published at https://data.gov.rs/sr/datasets/gradski-javni-prevoz-u-beogradu-gtfs/
 
