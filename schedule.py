@@ -8,7 +8,7 @@ def main() -> int:
     src_dir = root_dir / "src"
     sys.path.insert(0, str(src_dir))
 
-    from public_transit.retrieve import main as run
+    from public_transit.schedule import main as run
 
     return run()
 

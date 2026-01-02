@@ -11,6 +11,7 @@ import pandas as pd
 
 from public_transit.config import read_config
 import public_transit.message as message
+import public_transit.project as project
 
 def url_basename(url: str) -> str:
     """
@@ -99,6 +100,8 @@ def zip_to_sqlite(zip_path: Path, db_path: Path, verbosity: int = 1) -> None:
 
 def parse_args(argv: list[str] | None = None):
     parser = argparse.ArgumentParser(add_help=True)
+
+    # Verbosity: only -q or -v can be used, not both
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "-q", "--quiet",
@@ -130,11 +133,11 @@ def main() -> int:
     force_download = args.force in {"download", "all"}
     force_parse = args.force in {"parse", "all"}
 
-    repo_root = Path(__file__).resolve().parents[2]
+    root_dir = project.get_root_dir()
 
-    config = read_config(repo_root)
+    config = read_config(root_dir)
 
-    data_dir = (repo_root / config.data.dir).resolve()
+    data_dir = (root_dir / config.data.dir).resolve()
     data_dir.mkdir(parents=True, exist_ok=True)
 
     zip_name = url_basename(config.bus.source)
@@ -152,7 +155,7 @@ def main() -> int:
         message.write(f"Downloading {config.bus.source} -> {zip_path}", verbosity)
         urlretrieve(config.bus.source, zip_path)
 
-    db_path = (data_dir / config.data.db).resolve()
+    db_path = project.get_db_path(root_dir)
     message.write(f"Writing SQLite DB: {db_path}", verbosity)
     zip_to_sqlite(zip_path, db_path, verbosity=verbosity)
     return 0
