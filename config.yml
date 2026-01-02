@@ -1,0 +1,7 @@
+---
+data:
+  dir: data
+  db: data.db
+bus:
+  source: https://data.gov.rs/s/resources/gradski-javni-prevoz-u-beogradu-gtfs/20251031-111721/bgprev-belgrade-rs-2-.zip
+  expire: 86400
