@@ -1,3 +1,4 @@
+import argparse
 import os
 import time
 import sqlite3
@@ -11,6 +12,10 @@ import pandas as pd
 
 from public_transit.config import read_config
 
+# Verbosity levels
+QUIET = 0
+NORMAL = 1
+VERBOSE = 2
 
 def url_basename(url: str) -> str:
     """
@@ -66,7 +71,7 @@ def is_path_expired(path: Path, expire_seconds: float | None, now: float | None 
     return age_seconds > expire_seconds
 
 
-def zip_to_sqlite(zip_path: Path, db_path: Path) -> None:
+def zip_to_sqlite(zip_path: Path, db_path: Path, verbosity: int = 1) -> None:
     """
     Convert GTFS zip archive to SQLite database.
     """
@@ -86,9 +91,33 @@ def zip_to_sqlite(zip_path: Path, db_path: Path) -> None:
                     text_stream = TextIOWrapper(raw, encoding="utf-8", newline="")
                     df = pd.read_csv(text_stream)
                 df.to_sql(table_name, conn, if_exists="replace", index=False)
+                if verbosity >= 2:
+                    print(f"Wrote table: {table_name} ({len(df)} rows)")
+
+
+def parse_args(argv: list[str] | None = None):
+    parser = argparse.ArgumentParser(add_help=True)
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "-q", "--quiet",
+        action="store_true",
+        help="Suppress unnecessary messages")
+    group.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Show more messages")
+    return parser.parse_args(argv)
 
 
 def main() -> int:
+    args = parse_args()
+    if args.quiet:
+        verbosity = QUIET
+    elif args.verbose:
+        verbosity = VERBOSE
+    else:
+        verbosity = NORMAL
+
     repo_root = Path(__file__).resolve().parents[2]
 
     config = read_config(repo_root)
@@ -102,13 +131,16 @@ def main() -> int:
     if zip_path.exists():
         expire_seconds = parse_expire_seconds(getattr(config.bus, "expire", None))
         if not is_path_expired(zip_path, expire_seconds):
-            print(f"File already exists: {zip_path}")
+            if verbosity >= 1:
+                print(f"File already exists: {zip_path}")
             return 0
 
-    print(f"Downloading {config.bus.source} -> {zip_path}")
+    if verbosity >= 1:
+        print(f"Downloading {config.bus.source} -> {zip_path}")
     urlretrieve(config.bus.source, zip_path)
 
     db_path = (data_dir / config.data.db).resolve()
-    print(f"Writing SQLite DB: {db_path}")
-    zip_to_sqlite(zip_path, db_path)
+    if verbosity >= 1:
+        print(f"Writing SQLite DB: {db_path}")
+    zip_to_sqlite(zip_path, db_path, verbosity=verbosity)
     return 0
