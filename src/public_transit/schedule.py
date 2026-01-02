@@ -116,7 +116,7 @@ def get_schedule(service_id: str, dt: datetime, stop_name: str, interval: int):
                 SELECT
                     st.arrival_time,
                     r.route_short_name, r.route_long_name, r.route_type,
-                    t.direction_id, t.trip_id
+                    t.direction_id, t.trip_headsign
                 FROM stops s
                 LEFT JOIN stop_times st ON st.stop_id = s.stop_id 
                 LEFT JOIN trips t ON t.trip_id = st.trip_id
@@ -172,11 +172,11 @@ def main() -> int:
     if args.name:
         message.write(f"Schedule for {args.name}", verbosity)
         schedule = get_schedule(primary_service_id, dt, args.name, args.interval)
-        directions = ["→", "←"]
         types = {0: "Tm 🚋", 3: "A  🚌", 11: "Tb 🚎"}
 
         for row in schedule:
             type_emoji = types.get(row.route_type, "Unknn")
-            message.write(f"{row.arrival_time[:5]} {directions[row.direction_id]} {type_emoji} {row.route_short_name}\t{row.route_long_name}", verbosity, message.QUIET)
+            number = (row.route_short_name or "").ljust(5)
+            message.write(f"{row.arrival_time[:5]} {type_emoji} {number} {row.trip_headsign}", verbosity, message.QUIET)
         
     return 0
