@@ -11,11 +11,7 @@ from urllib.request import urlretrieve
 import pandas as pd
 
 from public_transit.config import read_config
-
-# Verbosity levels
-QUIET = 0
-NORMAL = 1
-VERBOSE = 2
+import public_transit.message as message
 
 def url_basename(url: str) -> str:
     """
@@ -91,8 +87,7 @@ def zip_to_sqlite(zip_path: Path, db_path: Path, verbosity: int = 1) -> None:
                     text_stream = TextIOWrapper(raw, encoding="utf-8", newline="")
                     df = pd.read_csv(text_stream)
                 df.to_sql(table_name, conn, if_exists="replace", index=False)
-                if verbosity >= 2:
-                    print(f"Wrote table: {table_name} ({len(df)} rows)")
+                message.write(f"Wrote table: {table_name} ({len(df)} rows)", verbosity, message.VERBOSE)
 
 
 def parse_args(argv: list[str] | None = None):
@@ -111,12 +106,11 @@ def parse_args(argv: list[str] | None = None):
 
 def main() -> int:
     args = parse_args()
+    verbosity = message.NORMAL
     if args.quiet:
-        verbosity = QUIET
+        verbosity = message.QUIET
     elif args.verbose:
-        verbosity = VERBOSE
-    else:
-        verbosity = NORMAL
+        verbosity = message.VERBOSE
 
     repo_root = Path(__file__).resolve().parents[2]
 
@@ -131,16 +125,13 @@ def main() -> int:
     if zip_path.exists():
         expire_seconds = parse_expire_seconds(getattr(config.bus, "expire", None))
         if not is_path_expired(zip_path, expire_seconds):
-            if verbosity >= 1:
-                print(f"File already exists: {zip_path}")
+            message.write(f"File already exists: {zip_path}", verbosity)
             return 0
 
-    if verbosity >= 1:
-        print(f"Downloading {config.bus.source} -> {zip_path}")
+    message.write(f"Downloading {config.bus.source} -> {zip_path}", verbosity)
     urlretrieve(config.bus.source, zip_path)
 
     db_path = (data_dir / config.data.db).resolve()
-    if verbosity >= 1:
-        print(f"Writing SQLite DB: {db_path}")
+    message.write(f"Writing SQLite DB: {db_path}", verbosity)
     zip_to_sqlite(zip_path, db_path, verbosity=verbosity)
     return 0
