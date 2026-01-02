@@ -5,3 +5,6 @@ data:
 bus:
   source: https://data.gov.rs/s/resources/gradski-javni-prevoz-u-beogradu-gtfs/20251031-111721/bgprev-belgrade-rs-2-.zip
   expire: 86400
+train:
+  source: https://data.gov.rs/s/resources/bg-voz-red-vozhnje-1/20201231-104329/bg-voz-red-vozhnje.csv
+  expire: 86400
