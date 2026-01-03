@@ -1,6 +1,6 @@
 # Belgrade Public Transit
 
-## Usage
+## CLI Usage
 
 Activate virtual environment, install dependencies:
 
@@ -72,6 +72,22 @@ Set interval in minutes:
 ## Configuration
 
 Configuration file is [config.yml](config.yml)
+
+## Telegram bot
+
+Bot is available at https://t.me/beobusbot or you can run it yourself:
+
+ask @BotFather for a token and save it to `.env` file:
+
+```ini
+# DO NOT COMMIT THIS FILE!
+TELEGRAM_BOT_TOKEN=your_token_here
+```
+
+then run:
+```bash
+make bot
+```
 
 ## Source data
 
