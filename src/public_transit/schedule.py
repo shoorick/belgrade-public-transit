@@ -10,6 +10,45 @@ from cyrtranslit import to_latin
 import public_transit.message as message
 import public_transit.project as project
 
+def fix_typos(text: str) -> str:
+    """
+    Fix common typos and mistakes derived from English and Russian languages
+    like block → blok, аэродром → аеродром, Яково → Јаково.
+
+    Side effect: lowercases the result.
+    """
+    text = text.lower()
+
+    replacements: list[tuple[str | re.Pattern[str], str]] = [
+        ("аэро", "аеро"),
+        ("бульвар", "булевар"),
+        ("ая площадь", "и трг"),
+        ("площадь", "трг"),
+        ("пл.", "трг"),
+        (re.compile(r"[иы]й\b"), "и"),
+        (re.compile(r"ая\b"), "а"),
+        ("й", "ј"),
+        ("ль", "љ"),
+        ("лю", "љу"),
+        ("ля", "ља"),
+        ("нь", "њ"),
+        ("ню", "њу"),
+        ("ня", "ња"),
+        ("цы", "ци"),
+        ("щ", "шт"),
+        ("ю", "ју"),
+        ("я", "ја"),
+        (re.compile(r"\bblock\b"), "blok"),
+    ]
+
+    for src, dst in replacements:
+        if isinstance(src, str):
+            text = text.replace(src, dst)
+        else:
+            text = src.sub(dst, text)
+
+    return text
+
 def transliterate(text: str) -> str:
     return to_latin(text, "sr")
 
@@ -113,13 +152,13 @@ def get_schedule(service_id: str, dt: datetime, stop_name: str, interval: int):
     Get schedule for the given service_id, timestamp, stop name and interval.
     """
 
-    condition = "lower(s.stop_name) = lower(?)"
+    condition = "lower(s.stop_name) = ?"
     order = "arrival_time"
     stop_key = str(stop_name)
 
     if '*' in stop_key:
         stop_key = stop_key.replace('*', '%')
-        condition = "lower(s.stop_name) LIKE lower(?)"
+        condition = "lower(s.stop_name) LIKE ?"
         order = "s.stop_name"
     elif re.fullmatch(r"\d{5}", stop_key):
         condition = "s.stop_id = ?"
@@ -213,7 +252,7 @@ def main() -> int:
         message.write(f"All service_id: {sorted(service_ids)}", verbosity, message.VERBOSE)
 
     if args.name:
-        name = transliterate(args.name)
+        name = transliterate(fix_typos(args.name))
         schedule = get_schedule(primary_service_id, dt, name, args.interval)
         types = {0: "Tm 🚋", 3: "A  🚌", 11: "Tb 🚎"}
 

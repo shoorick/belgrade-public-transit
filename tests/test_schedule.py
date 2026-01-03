@@ -77,6 +77,31 @@ def test_detect_service_type(date, expected):
 def test_transliterate(src, expected):
     assert s.transliterate(src) == expected
 
+
+@pytest.mark.parametrize(
+    "src,expected",
+    [
+        ("block 44", "blok 44"),
+        ("аэродром", "аеродром"),
+        ("Батайница", "батајница"),
+        ("белый", "бели"),
+        ("здравля", "здравља"),
+        ("Конярник", "коњарник"),
+        ("Космайская", "космајска"),
+        ("Любице", "љубице"),
+        ("Населье", "насеље"),
+        ("Площадь Славия", "трг славија"),
+        ("пл. Републике", "трг републике"),
+        ("Савская площадь", "савски трг"),
+        ("южный бульвар", "јужни булевар"),
+        ("Юнска", "јунска"),
+        ("Юрия", "јурија"),
+        ("Яково", "јаково"),
+    ],
+)
+def test_fix_typos(src, expected):
+    assert s.fix_typos(src) == expected
+
 @pytest.mark.parametrize(
     "name,expected",
     [
