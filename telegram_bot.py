@@ -21,6 +21,8 @@ def main() -> int:
         return 1
 
     from telegram import Update
+    from telegram.constants import ParseMode
+    from telegram.helpers import escape_markdown
     from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
     from public_transit.schedule import detect_service_type, get_schedule, transliterate
@@ -96,14 +98,28 @@ def main() -> int:
             return
 
         types = {0: "Tm 🚋", 3: "A  🚌", 11: "Tb 🚎"}
-        lines: list[str] = []
-        for row in rows[:40]:
+        header_name = stop_name_raw
+        if getattr(rows[0], "stop_name", None):
+            header_name = rows[0].stop_name
+
+        schedule_lines: list[str] = []
+        for row in rows[:33]:
             type_emoji = types.get(row.route_type, "Unknn")
             number = (row.route_short_name or "").ljust(5)
             headsign = row.trip_headsign or ""
-            lines.append(f"{row.arrival_time[:5]} {type_emoji} {number} {headsign}".rstrip())
+            schedule_lines.append(f"{row.arrival_time[:5]} {type_emoji} {number} {headsign}".rstrip())
 
-        await update.message.reply_text("\n".join(lines))
+        header_md = ""
+        if header_name:
+            header_md = f"*{escape_markdown(header_name, version=2)}*\n"
+
+        schedule_text = "\n".join(schedule_lines)
+        schedule_text = schedule_text.replace("```", "``\u200b`")
+        schedule_md = f"```\n{schedule_text}\n```"
+        await update.message.reply_text(
+            header_md + schedule_md,
+            parse_mode=ParseMode.MARKDOWN_V2,
+        )
 
     async def interval_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if update.message is None:
