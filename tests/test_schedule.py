@@ -80,8 +80,16 @@ def test_transliterate(src, expected):
 @pytest.mark.parametrize(
     "name,expected",
     [
-        ("Kalemegdan", True),
+        ("Kalemegdan", True), # Human-readable name
         ("nonexistent", False),
+        (148, True), # int stop_code = Karađorđev park
+        (7777, False), # int stop_code (nonexistent)
+        (20148, True), # int stop_id = Karađorđev park
+        (88888, False), # int stop_id (nonexistent)
+        ("1111", True), # str stop_code = Blok 70
+        ("8888", False), # str stop_code (nonexistent)
+        ("21111", True), # str stop_id = Blok 70
+        ("99999", False), # str stop_id (nonexistent)
     ]
 )
 def test_schedule_exists(name, expected):

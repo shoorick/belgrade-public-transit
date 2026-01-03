@@ -47,7 +47,7 @@ def parse_args(argv: list[str] | None = None):
         "-n",
         "--name",
         type=str,
-        help="Stop name (case-insensitive using Latin alphabet) like Kalemegdan or Savski trg",
+        help="Stop name (case-insensitive using Latin alphabet) like Kalemegdan or Savski trg or digital code like 5 or 20333",
     )
 
     return parser.parse_args(argv)
@@ -112,7 +112,15 @@ def get_schedule(service_id: str, dt: datetime, stop_name: str, interval: int):
     """
     Get schedule for the given service_id, timestamp, stop name and interval.
     """
-    sql = """
+
+    stop_key = str(stop_name)
+    condition = "lower(s.stop_name) = lower(?)"
+    if re.fullmatch(r"\d{5}", stop_key):
+        condition = "s.stop_id = ?"
+    elif re.fullmatch(r"\d{1,4}", stop_key):
+        condition = "s.stop_code = ?"
+
+    sql = f"""
         SELECT
             st.arrival_time,
             r.route_short_name, r.route_long_name, r.route_type,
@@ -121,7 +129,7 @@ def get_schedule(service_id: str, dt: datetime, stop_name: str, interval: int):
         LEFT JOIN stop_times st ON st.stop_id = s.stop_id 
         LEFT JOIN trips t ON t.trip_id = st.trip_id
         LEFT JOIN routes r ON r.route_id = t.route_id 
-        WHERE lower(s.stop_name) = lower(?)
+        WHERE {condition}
             AND t.service_id = ?
             AND (
                 CAST(substr(st.arrival_time, 1, 2) AS INTEGER) * 3600 +
@@ -148,7 +156,7 @@ def get_schedule(service_id: str, dt: datetime, stop_name: str, interval: int):
         while True:
             rows = conn.execute(
                 sql,
-                (stop_name, current_service_id, start_seconds, end_seconds),
+                (stop_key, current_service_id, start_seconds, end_seconds),
             ).fetchall()
             results.extend(SimpleNamespace(**dict(row)) for row in rows)
 

@@ -34,6 +34,10 @@ Nearest 30 minutes schedule for a stop name:
 ./schedule.py -n Kalemegdan
 # or use Cyrillic name
 ./schedule.py -n Калемегдан
+# or use short stop code
+./schedule.py -n 5
+# or use long stop ID
+./schedule.py -n 20333
 ```
 output example:
 ```
