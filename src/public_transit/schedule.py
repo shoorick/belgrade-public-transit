@@ -215,13 +215,14 @@ def main() -> int:
             message.write("No schedule found", verbosity)
             return 1
 
-        header_name = args.name
-        if re.fullmatch(r"\d+", args.name) and schedule and getattr(schedule[0], "stop_name", None):
-            header_name = schedule[0].stop_name
-        if header_name:
-            message.write(f"Schedule for {header_name}", verbosity)
+        old_header_name = ''
 
         for row in schedule:
+            header_name = getattr(row, "stop_name", "?")
+            if header_name != old_header_name:
+                message.write(header_name, verbosity, message.QUIET)
+                old_header_name = header_name
+
             type_emoji = types.get(row.route_type, "Unknn")
             number = (row.route_short_name or "").ljust(5)
             message.write(f"{row.arrival_time[:5]} {type_emoji} {number} {row.trip_headsign}", verbosity, message.QUIET)
