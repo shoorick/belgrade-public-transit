@@ -123,6 +123,7 @@ def get_schedule(service_id: str, dt: datetime, stop_name: str, interval: int):
     sql = f"""
         SELECT
             st.arrival_time,
+            s.stop_name,
             r.route_short_name, r.route_long_name, r.route_type,
             t.direction_id, t.trip_headsign
         FROM stops s
@@ -206,10 +207,19 @@ def main() -> int:
         message.write(f"All service_id: {sorted(service_ids)}", verbosity, message.VERBOSE)
 
     if args.name:
-        message.write(f"Schedule for {args.name}", verbosity)
         name = transliterate(args.name)
         schedule = get_schedule(primary_service_id, dt, name, args.interval)
         types = {0: "Tm 🚋", 3: "A  🚌", 11: "Tb 🚎"}
+
+        if not schedule:
+            message.write("No schedule found", verbosity)
+            return 1
+
+        header_name = args.name
+        if re.fullmatch(r"\d+", args.name) and schedule and getattr(schedule[0], "stop_name", None):
+            header_name = schedule[0].stop_name
+        if header_name:
+            message.write(f"Schedule for {header_name}", verbosity)
 
         for row in schedule:
             type_emoji = types.get(row.route_type, "Unknn")
