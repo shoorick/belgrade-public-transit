@@ -137,13 +137,67 @@ def main() -> int:
             % {"minutes": minutes}
         )
 
+    async def language_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        if update.message is None:
+            return
+
+        translator = get_translator(update, context)
+        _ = translator.gettext
+
+        if not context.args:
+            await update.message.reply_text(_("Usage: /language LANGUAGE"))
+            return
+
+        requested = " ".join(context.args)
+        lang = normalize_language(requested)
+        if not lang:
+            await update.message.reply_text(_("Unknown language"))
+            return
+
+        context.user_data["lang"] = lang
+        await update.message.reply_text(_("Language set to %(lang)s") % {"lang": lang})
+
+    async def command_alias_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        if update.message is None or update.message.text is None:
+            return
+
+        text = update.message.text.strip()
+        if not text.startswith("/"):
+            return
+
+        parts = text.split()
+        head = parts[0]
+        if "@" in head:
+            head = head.split("@", 1)[0]
+
+        prev_args = getattr(context, "args", None)
+        context.args = parts[1:]
+
+        if head == "/интервал":
+            try:
+                return await interval_command(update, context)
+            finally:
+                context.args = prev_args
+
+        if head == "/язык":
+            try:
+                return await language_command(update, context)
+            finally:
+                context.args = prev_args
+
+        context.args = prev_args
+
     app = Application.builder().token(token).build()
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("start", help_command))
+
     app.add_handler(CommandHandler("interval", interval_command))
+    app.add_handler(MessageHandler(filters.Regex(r"^/интервал(\s|$)"), command_alias_router))
 
     app.add_handler(CommandHandler("language", language_command))
     app.add_handler(CommandHandler("jezik", language_command))
+    app.add_handler(MessageHandler(filters.Regex(r"^/язык(\s|$)"), command_alias_router))
+
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, stop_query))
     app.run_polling()
 
