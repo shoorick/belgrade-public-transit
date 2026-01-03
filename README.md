@@ -75,6 +75,8 @@ Configuration file is [config.yml](config.yml)
 
 ## Telegram bot
 
+![icon](icon-64.png)
+
 Bot is available at https://t.me/beobusbot or you can run it yourself:
 
 ask @BotFather for a token and save it to `.env` file:
