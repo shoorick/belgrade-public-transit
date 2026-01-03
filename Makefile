@@ -5,10 +5,10 @@ test:
 	pytest
 
 i18n-extract:
-	pybabel extract -F babel.cfg -o locales/belgrade_bot.pot .
+	pybabel extract -F babel.cfg -o locales/telegram_bot.pot .
 
 i18n-update: i18n-extract
-	pybabel update -i locales/belgrade_bot.pot -d locales -D belgrade_bot
+	pybabel update -i locales/telegram_bot.pot -d locales -D telegram_bot
 
 i18n-compile:
-	pybabel compile -d locales -D belgrade_bot
+	pybabel compile -d locales -D telegram_bot

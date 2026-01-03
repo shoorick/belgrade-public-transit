@@ -26,7 +26,7 @@ def main() -> int:
     from public_transit.schedule import detect_service_type, get_schedule, transliterate
 
     localedir = root_dir / "locales"
-    domain = "belgrade_bot"
+    domain = "telegram_bot"
     default_interval = 30
 
     def get_translator(update: Update) -> gettext.NullTranslations:
