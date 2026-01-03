@@ -1,4 +1,5 @@
 data
+.env
 venv
 
 # Cache and temporary files
