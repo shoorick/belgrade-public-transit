@@ -89,8 +89,7 @@ def zip_to_sqlite(zip_path: Path, db_path: Path, verbosity: int = 1) -> None:
                 message.write(f"Wrote table: {table_name} ({len(df)} rows)", verbosity, message.VERBOSE)
 
                 for column in df.columns:
-                    if column.lower().endswith("_id"):
-                        index_name = f"idx_{table_name}_{column}"
+                        index_name = f"{table_name}_{column}_IDX"
                         conn.execute(
                             f'CREATE INDEX IF NOT EXISTS "{index_name}" '
                             f'ON "{table_name}" ("{column}")'
