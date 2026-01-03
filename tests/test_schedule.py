@@ -93,8 +93,26 @@ def test_transliterate(src, expected):
     ]
 )
 def test_schedule_exists(name, expected):
-    schedule_length = len(s.get_schedule("N", datetime(2026, 1, 1, 0, 0, 0), name, 86400))
+    schedule = s.get_schedule("N", datetime(2026, 1, 1, 0, 0, 0), name, 86400)
+    schedule_length = len(schedule)
     if expected:
         assert schedule_length > 0
+        assert schedule[0].stop_name == schedule[-1].stop_name
     else:
         assert schedule_length == 0
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        ("Trg*"), # match case
+        ("blok*"), # lowercase
+        ("BELI*"), # uppercase
+        ("*trg"), # starts with *
+        ("*kosa*"), # contains
+    ]
+)
+def test_schedule_exists_with_asterisk(name):
+    schedule = s.get_schedule("N", datetime(2026, 1, 1, 10, 0, 0), name, 7200)
+    schedule_length = len(schedule)
+    assert schedule_length > 0
+    assert schedule[0].stop_name != schedule[-1].stop_name

@@ -113,9 +113,15 @@ def get_schedule(service_id: str, dt: datetime, stop_name: str, interval: int):
     Get schedule for the given service_id, timestamp, stop name and interval.
     """
 
-    stop_key = str(stop_name)
     condition = "lower(s.stop_name) = lower(?)"
-    if re.fullmatch(r"\d{5}", stop_key):
+    order = "arrival_time"
+    stop_key = str(stop_name)
+
+    if '*' in stop_key:
+        stop_key = stop_key.replace('*', '%')
+        condition = "lower(s.stop_name) LIKE lower(?)"
+        order = "s.stop_name"
+    elif re.fullmatch(r"\d{5}", stop_key):
         condition = "s.stop_id = ?"
     elif re.fullmatch(r"\d{1,4}", stop_key):
         condition = "s.stop_code = ?"
@@ -137,7 +143,7 @@ def get_schedule(service_id: str, dt: datetime, stop_name: str, interval: int):
                 CAST(substr(st.arrival_time, 4, 2) AS INTEGER) * 60 +
                 CAST(substr(st.arrival_time, 7, 2) AS INTEGER)
             ) BETWEEN ? AND ?
-        ORDER BY arrival_time
+        ORDER BY {order}
     """
 
     def primary_service_id_for_day(day_dt: datetime) -> str:

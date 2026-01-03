@@ -105,26 +105,28 @@ def main() -> int:
             return
 
         types = {0: "Tm 🚋", 3: "A  🚌", 11: "Tb 🚎"}
-        header_name = stop_name_raw
-        if getattr(rows[0], "stop_name", None):
-            header_name = rows[0].stop_name
+        old_header_name = ''
+        schedule_lines: list[str] = ['```']
 
-        schedule_lines: list[str] = []
         for row in rows[:33]:
+            header_name = getattr(row, "stop_name", "?")
+            if header_name != old_header_name:
+                schedule_lines.extend([
+                    "```",
+                    f"*{escape_markdown(header_name, version=2)}*",
+                    "```",
+                ])
+                old_header_name = header_name
+
             type_emoji = types.get(row.route_type, "Unknn")
             number = (row.route_short_name or "").ljust(5)
             headsign = row.trip_headsign or ""
             schedule_lines.append(f"{row.arrival_time[:5]} {type_emoji} {number} {headsign}".rstrip())
 
-        header_md = ""
-        if header_name:
-            header_md = f"*{escape_markdown(header_name, version=2)}*\n"
+        schedule_lines.append("```")
 
-        schedule_text = "\n".join(schedule_lines)
-        schedule_text = schedule_text.replace("```", "``\u200b`")
-        schedule_md = f"```\n{schedule_text}\n```"
         await update.message.reply_text(
-            header_md + schedule_md,
+            "\n".join(schedule_lines[2:]), # skip two lines of ```
             parse_mode=ParseMode.MARKDOWN_V2,
         )
 
