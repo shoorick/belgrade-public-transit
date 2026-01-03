@@ -76,3 +76,17 @@ def test_detect_service_type(date, expected):
 )
 def test_transliterate(src, expected):
     assert s.transliterate(src) == expected
+
+@pytest.mark.parametrize(
+    "name,expected",
+    [
+        ("Kalemegdan", True),
+        ("nonexistent", False),
+    ]
+)
+def test_schedule_exists(name, expected):
+    schedule_length = len(s.get_schedule("N", datetime(2026, 1, 1, 0, 0, 0), name, 86400))
+    if expected:
+        assert schedule_length > 0
+    else:
+        assert schedule_length == 0
