@@ -27,6 +27,7 @@ def main() -> int:
 
     localedir = root_dir / "locales"
     domain = "belgrade_bot"
+    default_interval = 30
 
     def get_translator(update: Update) -> gettext.NullTranslations:
         lang = (getattr(update.effective_user, "language_code", None) or "").lower()
@@ -49,6 +50,8 @@ def main() -> int:
 
         _ = get_translator(update).gettext
 
+        interval = context.user_data.get("interval", default_interval)
+
         stop_name_raw = update.message.text.strip()
         if not stop_name_raw:
             await update.message.reply_text(_("Please enter a stop name"))
@@ -62,7 +65,7 @@ def main() -> int:
 
         primary_service_id = sorted(service_ids)[0]
         stop_name = transliterate(stop_name_raw)
-        rows = get_schedule(primary_service_id, dt, stop_name, 30)
+        rows = get_schedule(primary_service_id, dt, stop_name, interval)
 
         if not rows:
             await update.message.reply_text(_("Not found"))
@@ -78,9 +81,42 @@ def main() -> int:
 
         await update.message.reply_text("\n".join(lines))
 
+    async def interval_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        if update.message is None:
+            return
+
+        translator = get_translator(update)
+        _ = translator.gettext
+        ngettext = translator.ngettext
+
+        if not context.args:
+            await update.message.reply_text(_("Usage: /interval MINUTES"))
+            return
+
+        try:
+            minutes = int(context.args[0])
+        except ValueError:
+            await update.message.reply_text(_("Invalid interval"))
+            return
+
+        if minutes <= 0:
+            await update.message.reply_text(_("Invalid interval"))
+            return
+
+        context.user_data["interval"] = minutes
+        await update.message.reply_text(
+            ngettext(
+                "Interval set to %(minutes)s minute",
+                "Interval set to %(minutes)s minutes",
+                minutes,
+            )
+            % {"minutes": minutes}
+        )
+
     app = Application.builder().token(token).build()
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("start", help_command))
+    app.add_handler(CommandHandler("interval", interval_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, stop_query))
     app.run_polling()
 
