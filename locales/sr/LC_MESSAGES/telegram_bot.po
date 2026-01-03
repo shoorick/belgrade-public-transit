@@ -39,5 +39,5 @@ msgstr "Upotreba: /language JEZIK"
 msgid "Unknown language"
 msgstr "Nepoznat jezik"
 
-msgid "Language set to %(lang)s"
-msgstr "Jezik je podešen na %(lang)s"
+msgid "Language switched to English"
+msgstr "Jezik je promenjen na srpski"

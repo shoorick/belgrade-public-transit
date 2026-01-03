@@ -39,5 +39,5 @@ msgstr "Использование: /language ЯЗЫК"
 msgid "Unknown language"
 msgstr "Неизвестный язык"
 
-msgid "Language set to %(lang)s"
-msgstr "Язык установлен: %(lang)s"
+msgid "Language switched to English"
+msgstr "Язык изменён на русский"

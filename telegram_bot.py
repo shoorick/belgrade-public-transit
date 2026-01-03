@@ -155,7 +155,9 @@ def main() -> int:
             return
 
         context.user_data["lang"] = lang
-        await update.message.reply_text(_("Language set to %(lang)s") % {"lang": lang})
+        translator = get_translator(update, context)
+        _ = translator.gettext
+        await update.message.reply_text(_("Language switched to English"))
 
     async def command_alias_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if update.message is None or update.message.text is None:
