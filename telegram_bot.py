@@ -210,7 +210,18 @@ def main() -> int:
         _ = translator.gettext
 
         if not context.args:
-            await update.message.reply_text(_("Usage: /language LANGUAGE"))
+            choices = [
+                ("English", "en"),
+                ("Русский", "ru"),
+                ("Srpski", "sr"),
+            ]
+            keyboard = [
+                [InlineKeyboardButton(label, callback_data=f"language:{code}") for label, code in choices]
+            ]
+            await update.message.reply_text(
+                _("Usage: /language LANGUAGE"),
+                reply_markup=InlineKeyboardMarkup(keyboard),
+            )
             return
 
         requested = " ".join(context.args)
@@ -223,6 +234,25 @@ def main() -> int:
         translator = get_translator(update, context)
         _ = translator.gettext
         await update.message.reply_text(_("Language switched to English"))
+
+    async def language_menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        query = getattr(update, "callback_query", None)
+        if query is None or query.data is None:
+            return
+
+        if not query.data.startswith("language:"):
+            return
+
+        lang = query.data.split(":", 1)[1]
+        if lang not in {"en", "ru", "sr"}:
+            await query.answer()
+            return
+
+        context.user_data["lang"] = lang
+        translator = get_translator(update, context)
+        _ = translator.gettext
+        await query.answer()
+        await query.edit_message_text(_("Language switched to English"))
 
     async def command_alias_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if update.message is None or update.message.text is None:
@@ -267,6 +297,7 @@ def main() -> int:
     app.add_handler(CommandHandler("jezik", language_command))
     app.add_handler(MessageHandler(filters.Regex(r"^/язык(\s|$)"), command_alias_router))
     app.add_handler(MessageHandler(filters.Regex(r"^/језик(\s|$)"), command_alias_router))
+    app.add_handler(CallbackQueryHandler(language_menu_callback, pattern=r"^language:(en|ru|sr)$"))
 
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, stop_query))
     app.run_polling()
