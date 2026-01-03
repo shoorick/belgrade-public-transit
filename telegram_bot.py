@@ -179,7 +179,7 @@ def main() -> int:
             finally:
                 context.args = prev_args
 
-        if head == "/язык":
+        if head in {"/язык", "/језик"}:
             try:
                 return await language_command(update, context)
             finally:
@@ -195,8 +195,10 @@ def main() -> int:
     app.add_handler(MessageHandler(filters.Regex(r"^/интервал(\s|$)"), command_alias_router))
 
     app.add_handler(CommandHandler("language", language_command))
+    app.add_handler(CommandHandler("lang", language_command))
     app.add_handler(CommandHandler("jezik", language_command))
     app.add_handler(MessageHandler(filters.Regex(r"^/язык(\s|$)"), command_alias_router))
+    app.add_handler(MessageHandler(filters.Regex(r"^/језик(\s|$)"), command_alias_router))
 
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, stop_query))
     app.run_polling()
