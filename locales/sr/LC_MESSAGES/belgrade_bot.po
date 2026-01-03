@@ -1,0 +1,21 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: belgrade_bot\n"
+"POT-Creation-Date: 2026-01-03 00:00+0000\n"
+"PO-Revision-Date: 2026-01-03 00:00+0000\n"
+"Language: sr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Send a stop name to get upcoming routes for the next 30 minutes."
+msgstr "Pošaljite naziv stajališta da biste dobili polaske za narednih 30 minuta."
+
+msgid "Please enter a stop name"
+msgstr "Unesite naziv stajališta"
+
+msgid "No matching service type found"
+msgstr "Nije pronađen odgovarajući tip reda vožnje"
+
+msgid "Not found"
+msgstr "Ništa nije pronađeno"
