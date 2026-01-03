@@ -185,7 +185,7 @@ def main() -> int:
         message.write(f"Invalid date: {args.date}", verbosity, message.QUIET)
         return 1
 
-    message.write(f"Date and time: {dt}", verbosity)
+    message.write(f"Date and time: {str(dt)[:16]}", verbosity)
 
     service_ids = detect_service_type(dt)
     service_id_names = {
