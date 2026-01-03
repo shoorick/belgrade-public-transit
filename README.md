@@ -32,6 +32,8 @@ then run required scripts
 Nearest 30 minutes schedule for a stop name:
 ```bash
 ./schedule.py -n Kalemegdan
+# or use Cyrillic name
+./schedule.py -n Калемегдан
 ```
 output example:
 ```
@@ -90,4 +92,3 @@ has files:
 ### City trains BG:VOZ
 
 https://data.gov.rs/s/resources/bg-voz-red-vozhnje-1/20201231-104329/bg-voz-red-vozhnje.csv
-

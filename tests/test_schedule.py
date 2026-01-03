@@ -59,3 +59,20 @@ def test_parse_absolute_date(date, expected):
 )
 def test_detect_service_type(date, expected):
     assert s.detect_service_type(datetime(*date)) == expected
+
+
+@pytest.mark.parametrize(
+    "src,expected",
+    [
+        ("Калемегдан", "Kalemegdan"),
+        ("Тадеуша Кошћушка", "Tadeuša Košćuška"),
+        ("Боља", "Bolja"),
+        ("Бањица", "Banjica"),
+        ("Чукарица", "Čukarica"),
+        ("Ђурђевдан", "Đurđevdan"),
+        ("Џона Кенедија", "Džona Kenedija"),
+        ("Жарково", "Žarkovo"),
+    ],
+)
+def test_transliterate(src, expected):
+    assert s.transliterate(src) == expected

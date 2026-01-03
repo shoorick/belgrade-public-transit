@@ -1,4 +1,5 @@
 dateparser
+cyrtranslit
 holidays
 pandas
 pytest

@@ -5,10 +5,13 @@ from datetime import datetime
 import re
 import holidays
 from types import SimpleNamespace
+from cyrtranslit import to_latin
 
 import public_transit.message as message
 import public_transit.project as project
 
+def transliterate(text: str) -> str:
+    return to_latin(text, "sr")
 
 def parse_args(argv: list[str] | None = None):
     """
@@ -171,7 +174,8 @@ def main() -> int:
 
     if args.name:
         message.write(f"Schedule for {args.name}", verbosity)
-        schedule = get_schedule(primary_service_id, dt, args.name, args.interval)
+        name = transliterate(args.name)
+        schedule = get_schedule(primary_service_id, dt, name, args.interval)
         types = {0: "Tm 🚋", 3: "A  🚌", 11: "Tb 🚎"}
 
         for row in schedule:
