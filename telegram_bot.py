@@ -65,9 +65,16 @@ def main() -> int:
     async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if update.message is None:
             return
-        _ = get_translator(update, context).gettext
+        interval = context.user_data.get("interval", default_interval)
+        translator = get_translator(update, context)
+        ngettext = translator.ngettext
         await update.message.reply_text(
-            _("Send a stop name or code to get upcoming routes for the next 30 minutes.")
+            ngettext(
+                "Send a stop name or code to get upcoming routes for the next %(interval)s minute.",
+                "Send a stop name or code to get upcoming routes for the next %(interval)s minutes.",
+                interval,
+            )
+            % {"interval": interval}
         )
 
     async def stop_query(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

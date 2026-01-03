@@ -9,8 +9,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
 
-msgid "Send a stop name or code to get upcoming routes for the next 30 minutes."
-msgstr "Напишите название или код остановки, чтобы получить список маршрутов, проходящих через неё в ближайшие полчаса"
+msgid "Send a stop name or code to get upcoming routes for the next %(interval)s minute."
+msgid_plural "Send a stop name or code to get upcoming routes for the next %(interval)s minutes."
+msgstr[0] "Напишите название или код остановки, чтобы получить список маршрутов, проходящих через неё в ближайшую %(interval)s минуту"
+msgstr[1] "Напишите название или код остановки, чтобы получить список маршрутов, проходящих через неё в ближайшие %(interval)s минуты"
+msgstr[2] "Напишите название или код остановки, чтобы получить список маршрутов, проходящих через неё в ближайшие %(interval)s минут"
 
 msgid "Please enter a stop name or code"
 msgstr "Введите название или код остановки"
