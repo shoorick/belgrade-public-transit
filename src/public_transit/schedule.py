@@ -1,7 +1,7 @@
 import argparse
 import calendar
 import dateparser
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 import holidays
 from types import SimpleNamespace
@@ -107,35 +107,60 @@ def detect_service_type(dt: datetime):
 
     return service_ids
 
+
 def get_schedule(service_id: str, dt: datetime, stop_name: str, interval: int):
     """
     Get schedule for the given service_id, timestamp, stop name and interval.
     """
+    sql = """
+        SELECT
+            st.arrival_time,
+            r.route_short_name, r.route_long_name, r.route_type,
+            t.direction_id, t.trip_headsign
+        FROM stops s
+        LEFT JOIN stop_times st ON st.stop_id = s.stop_id 
+        LEFT JOIN trips t ON t.trip_id = st.trip_id
+        LEFT JOIN routes r ON r.route_id = t.route_id 
+        WHERE lower(s.stop_name) = lower(?)
+            AND t.service_id = ?
+            AND (
+                CAST(substr(st.arrival_time, 1, 2) AS INTEGER) * 3600 +
+                CAST(substr(st.arrival_time, 4, 2) AS INTEGER) * 60 +
+                CAST(substr(st.arrival_time, 7, 2) AS INTEGER)
+            ) BETWEEN ? AND ?
+        ORDER BY arrival_time
+    """
+
+    def primary_service_id_for_day(day_dt: datetime) -> str:
+        service_ids = detect_service_type(day_dt)
+        if not service_ids:
+            return service_id
+        return sorted(service_ids)[0]
+
     start_seconds = dt.hour * 3600 + dt.minute * 60 + dt.second
     end_seconds = start_seconds + interval * 60
+
+    results: list[SimpleNamespace] = []
+    current_dt = dt
+    current_service_id = service_id
+
     with project.connect_db() as conn:
-        rows = conn.execute(
-            """
-                SELECT
-                    st.arrival_time,
-                    r.route_short_name, r.route_long_name, r.route_type,
-                    t.direction_id, t.trip_headsign
-                FROM stops s
-                LEFT JOIN stop_times st ON st.stop_id = s.stop_id 
-                LEFT JOIN trips t ON t.trip_id = st.trip_id
-                LEFT JOIN routes r ON r.route_id = t.route_id 
-                WHERE lower(s.stop_name) = lower(?)
-                    AND t.service_id = ?
-                    AND (
-                        CAST(substr(st.arrival_time, 1, 2) AS INTEGER) * 3600 +
-                        CAST(substr(st.arrival_time, 4, 2) AS INTEGER) * 60 +
-                        CAST(substr(st.arrival_time, 7, 2) AS INTEGER)
-                    ) BETWEEN ? AND ?
-                ORDER BY arrival_time
-            """,
-            (stop_name, service_id, start_seconds, end_seconds),
-        ).fetchall()
-    return [SimpleNamespace(**dict(row)) for row in rows]
+        while True:
+            rows = conn.execute(
+                sql,
+                (stop_name, current_service_id, start_seconds, end_seconds),
+            ).fetchall()
+            results.extend(SimpleNamespace(**dict(row)) for row in rows)
+
+            if end_seconds < 86400:
+                break
+
+            end_seconds -= 86400
+            start_seconds = 0
+            current_dt = current_dt + timedelta(days=1)
+            current_service_id = primary_service_id_for_day(current_dt)
+
+    return results
 
 
 def main() -> int:
