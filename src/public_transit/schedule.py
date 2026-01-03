@@ -201,9 +201,9 @@ def main() -> int:
     primary_service_id = sorted(service_ids)[0]
     message.write(
         f"Service type: {primary_service_id} ({service_id_names.get(primary_service_id, 'Unknown')})",
-        verbosity,
+        verbosity, message.VERBOSE
     )
-    if verbosity >= message.VERBOSE and len(service_ids) > 1:
+    if len(service_ids) > 1:
         message.write(f"All service_id: {sorted(service_ids)}", verbosity, message.VERBOSE)
 
     if args.name:
