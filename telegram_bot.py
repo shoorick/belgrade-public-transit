@@ -29,17 +29,41 @@ def main() -> int:
     domain = "telegram_bot"
     default_interval = 30
 
-    def get_translator(update: Update) -> gettext.NullTranslations:
+    def normalize_language(value: str) -> str | None:
+        v = value.strip().lower()
+        if not v:
+            return None
+
+        if v in {"en", "eng", "english"}:
+            return "en"
+        if v in {"ru", "rus", "russian", "русский", "ру", "рус"}:
+            return "ru"
+        if v in {"sr", "ser", "serbian", "српски", "срп", "srpski", "srb", "srp"}:
+            return "sr"
+
+        return None
+
+    def detect_language(update: Update) -> str:
         lang = (getattr(update.effective_user, "language_code", None) or "").lower()
         lang = lang.split("-")[0]
+        lang = normalize_language(lang) or "en"
+        return lang
+
+    def get_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
+        lang = context.user_data.get("lang")
         if not lang:
-            lang = "en"
+            lang = detect_language(update)
+            context.user_data["lang"] = lang
+        return lang
+
+    def get_translator(update: Update, context: ContextTypes.DEFAULT_TYPE) -> gettext.NullTranslations:
+        lang = get_language(update, context)
         return gettext.translation(domain, localedir=str(localedir), languages=[lang], fallback=True)
 
     async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if update.message is None:
             return
-        _ = get_translator(update).gettext
+        _ = get_translator(update, context).gettext
         await update.message.reply_text(
             _("Send a stop name to get upcoming routes for the next 30 minutes.")
         )
@@ -48,7 +72,7 @@ def main() -> int:
         if update.message is None or update.message.text is None:
             return
 
-        _ = get_translator(update).gettext
+        _ = get_translator(update, context).gettext
 
         interval = context.user_data.get("interval", default_interval)
 
@@ -85,7 +109,7 @@ def main() -> int:
         if update.message is None:
             return
 
-        translator = get_translator(update)
+        translator = get_translator(update, context)
         _ = translator.gettext
         ngettext = translator.ngettext
 
@@ -117,6 +141,9 @@ def main() -> int:
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("start", help_command))
     app.add_handler(CommandHandler("interval", interval_command))
+
+    app.add_handler(CommandHandler("language", language_command))
+    app.add_handler(CommandHandler("jezik", language_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, stop_query))
     app.run_polling()
 

@@ -32,3 +32,12 @@ msgid_plural "Interval set to %(minutes)s minutes"
 msgstr[0] "Interval je podešen na %(minutes)s minutu"
 msgstr[1] "Interval je podešen na %(minutes)s minute"
 msgstr[2] "Interval je podešen na %(minutes)s minuta"
+
+msgid "Usage: /language LANGUAGE"
+msgstr "Upotreba: /language JEZIK"
+
+msgid "Unknown language"
+msgstr "Nepoznat jezik"
+
+msgid "Language set to %(lang)s"
+msgstr "Jezik je podešen na %(lang)s"

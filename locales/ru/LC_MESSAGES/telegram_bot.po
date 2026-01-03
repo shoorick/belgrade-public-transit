@@ -32,3 +32,12 @@ msgid_plural "Interval set to %(minutes)s minutes"
 msgstr[0] "Интервал установлен: %(minutes)s минута"
 msgstr[1] "Интервал установлен: %(minutes)s минуты"
 msgstr[2] "Интервал установлен: %(minutes)s минут"
+
+msgid "Usage: /language LANGUAGE"
+msgstr "Использование: /language ЯЗЫК"
+
+msgid "Unknown language"
+msgstr "Неизвестный язык"
+
+msgid "Language set to %(lang)s"
+msgstr "Язык установлен: %(lang)s"
