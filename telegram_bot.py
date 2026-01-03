@@ -67,7 +67,7 @@ def main() -> int:
             return
         _ = get_translator(update, context).gettext
         await update.message.reply_text(
-            _("Send a stop name to get upcoming routes for the next 30 minutes.")
+            _("Send a stop name or code to get upcoming routes for the next 30 minutes.")
         )
 
     async def stop_query(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -80,7 +80,7 @@ def main() -> int:
 
         stop_name_raw = update.message.text.strip()
         if not stop_name_raw:
-            await update.message.reply_text(_("Please enter a stop name"))
+            await update.message.reply_text(_("Please enter a stop name or code"))
             return
 
         dt = datetime.now()

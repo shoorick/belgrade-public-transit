@@ -9,11 +9,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2;\n"
 
-msgid "Send a stop name to get upcoming routes for the next 30 minutes."
+msgid "Send a stop name or code to get upcoming routes for the next 30 minutes."
 msgstr "Pošaljite naziv stajališta da biste dobili polaske za narednih 30 minuta."
 
-msgid "Please enter a stop name"
-msgstr "Unesite naziv stajališta"
+msgid "Please enter a stop name or code"
+msgstr "Unesite naziv stajališta ili kod"
 
 msgid "No matching service type found"
 msgstr "Nije pronađen odgovarajući tip reda vožnje"
