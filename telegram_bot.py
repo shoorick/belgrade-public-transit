@@ -22,8 +22,9 @@ def main() -> int:
 
     from telegram import Update
     from telegram.constants import ParseMode
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     from telegram.helpers import escape_markdown
-    from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+    from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters
 
     from public_transit.schedule import detect_service_type, get_schedule, transliterate
 
@@ -139,7 +140,14 @@ def main() -> int:
         ngettext = translator.ngettext
 
         if not context.args:
-            await update.message.reply_text(_("Usage: /interval MINUTES"))
+            choices = [5, 10, 20, 30, 60, 120, 240]
+            keyboard = [
+                [InlineKeyboardButton(str(m), callback_data=f"interval:{m}") for m in choices]
+            ]
+            await update.message.reply_text(
+                _("Usage: /interval MINUTES"),
+                reply_markup=InlineKeyboardMarkup(keyboard),
+            )
             return
 
         try:
@@ -154,6 +162,38 @@ def main() -> int:
 
         context.user_data["interval"] = minutes
         await update.message.reply_text(
+            ngettext(
+                "Interval set to %(minutes)s minute",
+                "Interval set to %(minutes)s minutes",
+                minutes,
+            )
+            % {"minutes": minutes}
+        )
+
+    async def interval_menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        query = getattr(update, "callback_query", None)
+        if query is None or query.data is None:
+            return
+
+        if not query.data.startswith("interval:"):
+            return
+
+        try:
+            minutes = int(query.data.split(":", 1)[1])
+        except ValueError:
+            await query.answer()
+            return
+
+        if minutes <= 0:
+            await query.answer()
+            return
+
+        translator = get_translator(update, context)
+        ngettext = translator.ngettext
+
+        context.user_data["interval"] = minutes
+        await query.answer()
+        await query.edit_message_text(
             ngettext(
                 "Interval set to %(minutes)s minute",
                 "Interval set to %(minutes)s minutes",
@@ -220,6 +260,7 @@ def main() -> int:
 
     app.add_handler(CommandHandler("interval", interval_command))
     app.add_handler(MessageHandler(filters.Regex(r"^/интервал(\s|$)"), command_alias_router))
+    app.add_handler(CallbackQueryHandler(interval_menu_callback, pattern=r"^interval:\d+$"))
 
     app.add_handler(CommandHandler("language", language_command))
     app.add_handler(CommandHandler("lang", language_command))
