@@ -12,3 +12,6 @@ i18n-update: i18n-extract
 
 i18n-compile:
 	pybabel compile -d locales -D telegram_bot
+
+bot:
+	./telegram_bot.py
