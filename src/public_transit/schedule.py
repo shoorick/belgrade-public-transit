@@ -177,11 +177,7 @@ def get_schedule(service_id: str, dt: datetime, stop_name: str, interval: int):
         LEFT JOIN routes r ON r.route_id = t.route_id 
         WHERE {condition}
             AND t.service_id = ?
-            AND (
-                CAST(substr(st.arrival_time, 1, 2) AS INTEGER) * 3600 +
-                CAST(substr(st.arrival_time, 4, 2) AS INTEGER) * 60 +
-                CAST(substr(st.arrival_time, 7, 2) AS INTEGER)
-            ) BETWEEN ? AND ?
+            AND st.arrival_time BETWEEN ? AND ?
         ORDER BY {order}
     """
 
@@ -191,28 +187,33 @@ def get_schedule(service_id: str, dt: datetime, stop_name: str, interval: int):
             return service_id
         return sorted(service_ids)[0]
 
-    start_seconds = dt.hour * 3600 + dt.minute * 60 + dt.second
-    end_seconds = start_seconds + interval * 60
-
     results: list[SimpleNamespace] = []
-    current_dt = dt
-    current_service_id = service_id
+
+    start_dt = dt
+    end_dt = dt + timedelta(minutes=interval)
+    base_date = start_dt.date()
+
+    def gtfs_time_for(base: datetime, target: datetime) -> str:
+        hour = target.hour
+        if target.date() != base.date():
+            hour += 24
+        return f"{hour:02d}:{target.minute:02d}:{target.second:02d}"
+
+    time_windows: list[tuple[str, str, str]] = []
+    if end_dt.date() == base_date:
+        time_windows.append((service_id, gtfs_time_for(start_dt, start_dt), gtfs_time_for(start_dt, end_dt)))
+    else:
+        time_windows.append((service_id, gtfs_time_for(start_dt, start_dt), gtfs_time_for(start_dt, end_dt)))
+        next_service_id = primary_service_id_for_day(start_dt + timedelta(days=1))
+        time_windows.append((next_service_id, "00:00:00", gtfs_time_for(end_dt, end_dt)))
 
     with project.connect_db() as conn:
-        while True:
+        for window_service_id, start_time, end_time in time_windows:
             rows = conn.execute(
                 sql,
-                (stop_key, current_service_id, start_seconds, end_seconds),
+                (stop_key, window_service_id, start_time, end_time),
             ).fetchall()
             results.extend(SimpleNamespace(**dict(row)) for row in rows)
-
-            if end_seconds < 86400:
-                break
-
-            end_seconds -= 86400
-            start_seconds = 0
-            current_dt = current_dt + timedelta(days=1)
-            current_service_id = primary_service_id_for_day(current_dt)
 
     return results
 
