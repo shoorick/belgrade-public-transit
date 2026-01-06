@@ -154,7 +154,7 @@ def get_schedule(service_id: str, dt: datetime, stop_name: str, interval: int):
 
     condition = "lower(s.stop_name) = ?"
     order = "arrival_time"
-    stop_key = str(stop_name)
+    stop_key = str(stop_name).lower()
 
     if '*' in stop_key:
         stop_key = stop_key.replace('*', '%')
