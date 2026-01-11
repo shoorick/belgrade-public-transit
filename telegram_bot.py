@@ -97,9 +97,8 @@ def main() -> int:
             await update.message.reply_text(_("No matching service type found"))
             return
 
-        primary_service_id = sorted(service_ids)[0]
         stop_name = transliterate(stop_name_raw)
-        rows = get_schedule(primary_service_id, dt, stop_name, interval)
+        rows = get_schedule(dt, stop_name, interval)
 
         if not rows:
             await update.message.reply_text(_("Not found"))

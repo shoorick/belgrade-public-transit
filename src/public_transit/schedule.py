@@ -150,9 +150,9 @@ def detect_service_type(dt: datetime):
     return service_ids
 
 
-def get_schedule(service_id: str, dt: datetime, stop_name: str, interval: int):
+def get_schedule(dt: datetime, stop_name: str, interval: int):
     """
-    Get schedule for the given service_id, timestamp, stop name and interval.
+    Get schedule for the given timestamp, stop name and interval.
     """
 
     condition = "lower(s.stop_name) = ?"
@@ -184,10 +184,10 @@ def get_schedule(service_id: str, dt: datetime, stop_name: str, interval: int):
         ORDER BY {order}
     """
 
-    def primary_service_id_for_day(day_dt: datetime) -> str:
+    def primary_service_id_for_day(day_dt: datetime) -> str | None:
         service_ids = detect_service_type(day_dt)
         if not service_ids:
-            return service_id
+            return None
         return sorted(service_ids)[0]
 
     results: list[SimpleNamespace] = []
@@ -202,16 +202,18 @@ def get_schedule(service_id: str, dt: datetime, stop_name: str, interval: int):
             hour += 24
         return f"{hour:02d}:{target.minute:02d}:{target.second:02d}"
 
-    time_windows: list[tuple[str, str, str]] = []
+    time_windows: list[tuple[datetime, str, str]] = []
     if end_dt.date() == base_date:
-        time_windows.append((service_id, gtfs_time_for(start_dt, start_dt), gtfs_time_for(start_dt, end_dt)))
+        time_windows.append((start_dt, gtfs_time_for(start_dt, start_dt), gtfs_time_for(start_dt, end_dt)))
     else:
-        time_windows.append((service_id, gtfs_time_for(start_dt, start_dt), gtfs_time_for(start_dt, end_dt)))
-        next_service_id = primary_service_id_for_day(start_dt + timedelta(days=1))
-        time_windows.append((next_service_id, "00:00:00", gtfs_time_for(end_dt, end_dt)))
+        time_windows.append((start_dt, gtfs_time_for(start_dt, start_dt), gtfs_time_for(start_dt, end_dt)))
+        time_windows.append((end_dt, "00:00:00", gtfs_time_for(end_dt, end_dt)))
 
     with project.connect_db() as conn:
-        for window_service_id, start_time, end_time in time_windows:
+        for window_dt, start_time, end_time in time_windows:
+            window_service_id = primary_service_id_for_day(window_dt)
+            if not window_service_id:
+                continue
             rows = conn.execute(
                 sql,
                 (stop_key, window_service_id, start_time, end_time),
@@ -257,7 +259,7 @@ def main() -> int:
 
     if args.name:
         name = transliterate(fix_typos(args.name))
-        schedule = get_schedule(primary_service_id, dt, name, args.interval)
+        schedule = get_schedule(dt, name, args.interval)
         types = {0: "Tm 🚋", 3: "A  🚌", 11: "Tb 🚎"}
 
         if not schedule:
