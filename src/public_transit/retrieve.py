@@ -3,6 +3,7 @@ import os
 import time
 import sqlite3
 import zipfile
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
@@ -73,6 +74,9 @@ def zip_to_sqlite(zip_path: Path, db_path: Path, verbosity: int = 1) -> None:
     """
     msg = message.Message(verbosity)
     db_path.parent.mkdir(parents=True, exist_ok=True)
+    dataset_mtime = datetime.fromtimestamp(zip_path.stat().st_mtime).astimezone().isoformat(timespec="seconds")
+    msg.write(f"Dataset modified at {dataset_mtime}", message.VERBOSE)
+
     with sqlite3.connect(str(db_path)) as conn:
         with zipfile.ZipFile(str(zip_path), "r") as zf:
             for info in zf.infolist():
@@ -84,6 +88,9 @@ def zip_to_sqlite(zip_path: Path, db_path: Path, verbosity: int = 1) -> None:
                     continue
 
                 table_name = Path(name_in_zip).stem
+                table_mtime = datetime(*info.date_time).astimezone().isoformat(timespec="seconds")
+                msg.write(f"{table_name} modified at {table_mtime}", message.VERBOSE)
+
                 with zf.open(info, "r") as raw:
                     df = pd.read_csv(raw, encoding="utf-8")
                 df.to_sql(table_name, conn, if_exists="replace", index=False)
