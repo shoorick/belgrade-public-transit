@@ -231,12 +231,14 @@ def main() -> int:
     elif args.verbose:
         verbosity = message.VERBOSE
 
+    msg = message.Message(verbosity)
+
     dt = parse_date(args.date)
     if dt is None:
-        message.write(f"Invalid date: {args.date}", verbosity, message.QUIET)
+        msg.write(f"Invalid date: {args.date}", message.QUIET)
         return 1
 
-    message.write(f"Date and time: {str(dt)[:16]}", verbosity)
+    msg.write(f"Date and time: {str(dt)[:16]}")
 
     service_ids = detect_service_type(dt)
     service_id_names = {
@@ -246,16 +248,16 @@ def main() -> int:
     }
 
     if not service_ids:
-        message.write("No matching service_id found", verbosity, message.QUIET)
+        msg.write("No matching service_id found", message.QUIET)
         return 1
 
     primary_service_id = sorted(service_ids)[0]
-    message.write(
+    msg.write(
         f"Service type: {primary_service_id} ({service_id_names.get(primary_service_id, 'Unknown')})",
-        verbosity, message.VERBOSE
+        message.VERBOSE,
     )
     if len(service_ids) > 1:
-        message.write(f"All service_id: {sorted(service_ids)}", verbosity, message.VERBOSE)
+        msg.write(f"All service_id: {sorted(service_ids)}", message.VERBOSE)
 
     if args.name:
         name = transliterate(fix_typos(args.name))
@@ -263,7 +265,7 @@ def main() -> int:
         types = {0: "Tm 🚋", 3: "A  🚌", 11: "Tb 🚎"}
 
         if not schedule:
-            message.write("No schedule found", verbosity)
+            msg.write("No schedule found")
             return 1
 
         old_header_name = ''
@@ -271,11 +273,11 @@ def main() -> int:
         for row in schedule:
             header_name = getattr(row, "stop_name", "?")
             if header_name != old_header_name:
-                message.write(header_name, verbosity, message.QUIET)
+                msg.write(header_name, message.QUIET)
                 old_header_name = header_name
 
             type_emoji = types.get(row.route_type, "Unknn")
             number = (row.route_short_name or "").ljust(5)
-            message.write(f"{row.arrival_time[:5]} {type_emoji} {number} {row.trip_headsign}", verbosity, message.QUIET)
+            msg.write(f"{row.arrival_time[:5]} {type_emoji} {number} {row.trip_headsign}", message.QUIET)
         
     return 0

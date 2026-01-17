@@ -71,6 +71,7 @@ def zip_to_sqlite(zip_path: Path, db_path: Path, verbosity: int = 1) -> None:
     """
     Convert GTFS zip archive to SQLite database.
     """
+    msg = message.Message(verbosity)
     db_path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(str(db_path)) as conn:
         with zipfile.ZipFile(str(zip_path), "r") as zf:
@@ -86,7 +87,7 @@ def zip_to_sqlite(zip_path: Path, db_path: Path, verbosity: int = 1) -> None:
                 with zf.open(info, "r") as raw:
                     df = pd.read_csv(raw, encoding="utf-8")
                 df.to_sql(table_name, conn, if_exists="replace", index=False)
-                message.write(f"Wrote table: {table_name} ({len(df)} rows)", verbosity, message.VERBOSE)
+                msg.write(f"Wrote table: {table_name} ({len(df)} rows)", message.VERBOSE)
 
                 for column in df.columns:
                     if column.lower().endswith("_id") or (
@@ -99,7 +100,7 @@ def zip_to_sqlite(zip_path: Path, db_path: Path, verbosity: int = 1) -> None:
                             f'CREATE INDEX IF NOT EXISTS "{index_name}" '
                             f'ON "{table_name}" ("{column}")'
                         )
-                        message.write(f"Created index: {index_name}", verbosity, message.VERBOSE)
+                        msg.write(f"Created index: {index_name}", message.VERBOSE)
 
 
 def parse_args(argv: list[str] | None = None):
@@ -134,6 +135,8 @@ def main() -> int:
     elif args.verbose:
         verbosity = message.VERBOSE
 
+    msg = message.Message(verbosity)
+
     force_download = args.force in {"download", "all"}
     force_parse = args.force in {"parse", "all"}
 
@@ -152,14 +155,14 @@ def main() -> int:
         expire_seconds = parse_time(getattr(config.bus, "expire", None))
         zip_expired = is_path_expired(zip_path, expire_seconds)
         if not zip_expired and not force_parse:
-            message.write(f"File already exists: {zip_path}", verbosity)
+            msg.write(f"File already exists: {zip_path}")
             return 0
 
     if force_download or (not zip_path.exists()) or zip_expired:
-        message.write(f"Downloading {config.bus.source} -> {zip_path}", verbosity)
+        msg.write(f"Downloading {config.bus.source} -> {zip_path}")
         urlretrieve(config.bus.source, zip_path)
 
     db_path = project.get_db_path(root_dir)
-    message.write(f"Writing SQLite DB: {db_path}", verbosity)
+    msg.write(f"Writing SQLite DB: {db_path}")
     zip_to_sqlite(zip_path, db_path, verbosity=verbosity)
     return 0
