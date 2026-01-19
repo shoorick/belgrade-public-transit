@@ -10,7 +10,7 @@ i18n-extract:
 i18n-update: i18n-extract
 	pybabel update -i locales/telegram_bot.pot -d locales -D telegram_bot
 
-i18n-compile:
+i18n-compile mo:
 	pybabel compile -d locales -D telegram_bot
 
 bot:
