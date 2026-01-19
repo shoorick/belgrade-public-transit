@@ -28,6 +28,7 @@ def main() -> int:
     from telegram.helpers import escape_markdown
     from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters
 
+    from public_transit.config import read_config
     from public_transit.schedule import detect_service_type, get_schedule, transliterate
     import public_transit.project as project
 
@@ -36,6 +37,10 @@ def main() -> int:
     localedir = root_dir / "locales"
     domain = "telegram_bot"
     default_interval = 30
+
+    config = read_config(root_dir)
+    lat_delta = float(config.geo.bbox.lat_delta)
+    lon_delta = float(config.geo.bbox.lon_delta)
 
     def normalize_language(value: str) -> str | None:
         v = value.strip().lower()
@@ -144,8 +149,6 @@ def main() -> int:
         lat = update.message.location.latitude
         lon = update.message.location.longitude
 
-        lat_delta = 0.00833
-        lon_delta = 0.01235
         lat_min = lat - lat_delta
         lat_max = lat + lat_delta
         lon_min = lon - lon_delta

@@ -8,3 +8,7 @@ bus:
 train:
   source: https://data.gov.rs/s/resources/bg-voz-red-vozhnje-1/20201231-104329/bg-voz-red-vozhnje.csv
   expire: 86400
+geo:
+  bbox:
+    lat_delta: 0.00833
+    lon_delta: 0.01235
