@@ -44,3 +44,6 @@ msgstr "Nepoznat jezik"
 
 msgid "Language switched to English"
 msgstr "Jezik je promenjen na srpski"
+
+msgid "No stops found nearby"
+msgstr "Nema stajališta u blizini"

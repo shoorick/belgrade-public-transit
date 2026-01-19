@@ -29,6 +29,7 @@ def main() -> int:
     from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters
 
     from public_transit.schedule import detect_service_type, get_schedule, transliterate
+    import public_transit.project as project
 
     logger = logging.getLogger(__name__)
 
@@ -133,6 +134,48 @@ def main() -> int:
             "\n".join(schedule_lines[2:]), # skip two lines of ```
             parse_mode=ParseMode.MARKDOWN_V2,
         )
+
+    async def location_query(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        if update.message is None or update.message.location is None:
+            return
+
+        _ = get_translator(update, context).gettext
+
+        lat = update.message.location.latitude
+        lon = update.message.location.longitude
+
+        lat_delta = 0.00833
+        lon_delta = 0.01235
+        lat_min = lat - lat_delta
+        lat_max = lat + lat_delta
+        lon_min = lon - lon_delta
+        lon_max = lon + lon_delta
+
+        sql = """
+            SELECT stop_code, stop_name, stop_lat, stop_lon
+            FROM stops
+            WHERE stop_lat BETWEEN ? AND ?
+                AND stop_lon BETWEEN ? AND ?
+            ORDER BY stop_name
+        """
+
+        with project.connect_db() as conn:
+            rows = conn.execute(sql, (lat_min, lat_max, lon_min, lon_max)).fetchall()
+
+        if not rows:
+            await update.message.reply_text(_("No stops found nearby"))
+            return
+
+        lines: list[str] = []
+        for row in rows[:30]:
+            stop_code = row[0]
+            stop_name = row[1]
+            stop_lat = row[2]
+            stop_lon = row[3]
+            code_part = f"{stop_code} " if stop_code else ""
+            lines.append(f"{code_part}{stop_name} ({stop_lat:.5f}, {stop_lon:.5f})")
+
+        await update.message.reply_text("\n".join(lines))
 
     async def interval_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if update.message is None:
@@ -326,6 +369,7 @@ def main() -> int:
     app.add_handler(MessageHandler(filters.Regex(r"^/језик(\s|$)"), command_alias_router))
     app.add_handler(CallbackQueryHandler(language_menu_callback, pattern=r"^language:(en|ru|sr)$"))
 
+    app.add_handler(MessageHandler(filters.LOCATION, location_query))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, stop_query))
     app.add_handler(MessageHandler(filters.COMMAND, unknown_command))
     app.add_error_handler(error_handler)
