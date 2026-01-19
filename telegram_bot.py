@@ -303,6 +303,14 @@ def main() -> int:
             exc_info=(type(err), err, err.__traceback__),
         )
 
+    async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        if update.message is None or update.message.text is None:
+            return
+        text = update.message.text.strip()
+        if not text:
+            return
+        logger.warning("Unknown command: %s", text)
+
     app = Application.builder().token(token).build()
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("start", help_command))
@@ -319,6 +327,7 @@ def main() -> int:
     app.add_handler(CallbackQueryHandler(language_menu_callback, pattern=r"^language:(en|ru|sr)$"))
 
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, stop_query))
+    app.add_handler(MessageHandler(filters.COMMAND, unknown_command))
     app.add_error_handler(error_handler)
     app.run_polling()
 
