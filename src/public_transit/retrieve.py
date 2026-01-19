@@ -98,7 +98,7 @@ def zip_to_sqlite(zip_path: Path, db_path: Path, verbosity: int = 1) -> None:
 
                 for column in df.columns:
                     if column.lower().endswith("_id") or (
-                        table_name == "stops" and column in {"stop_code", "stop_name"}
+                        table_name == "stops" and column in {"stop_code", "stop_name", "stop_lat", "stop_lon"}
                     ) or (
                         table_name == "stop_times" and column == "arrival_time"
                     ):
