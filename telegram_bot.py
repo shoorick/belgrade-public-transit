@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-import os
-import sys
 import gettext
 import logging
+import os
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -21,12 +21,11 @@ def main() -> int:
         print("Missing TELEGRAM_BOT_TOKEN", file=sys.stderr)
         return 1
 
-    from telegram import Update
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
     from telegram.constants import ParseMode
-    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
     from telegram.error import NetworkError
-    from telegram.helpers import escape_markdown
     from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters
+    from telegram.helpers import escape_markdown
 
     from public_transit.config import read_config
     from public_transit.schedule import detect_service_type, get_schedule, transliterate
