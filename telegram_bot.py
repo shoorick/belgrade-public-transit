@@ -3,6 +3,7 @@
 import os
 import sys
 import gettext
+import logging
 from datetime import datetime
 from pathlib import Path
 
@@ -23,10 +24,13 @@ def main() -> int:
     from telegram import Update
     from telegram.constants import ParseMode
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+    from telegram.error import NetworkError
     from telegram.helpers import escape_markdown
     from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters
 
     from public_transit.schedule import detect_service_type, get_schedule, transliterate
+
+    logger = logging.getLogger(__name__)
 
     localedir = root_dir / "locales"
     domain = "telegram_bot"
@@ -283,6 +287,22 @@ def main() -> int:
 
         context.args = prev_args
 
+    async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+        err = getattr(context, "error", None)
+        if isinstance(err, NetworkError):
+            logger.warning("Telegram network error: %s", err)
+            return
+
+        if err is None:
+            logger.error("Telegram error handler called with no exception")
+            return
+
+        logger.error(
+            "Unhandled Telegram exception: %r",
+            err,
+            exc_info=(type(err), err, err.__traceback__),
+        )
+
     app = Application.builder().token(token).build()
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("start", help_command))
@@ -299,6 +319,7 @@ def main() -> int:
     app.add_handler(CallbackQueryHandler(language_menu_callback, pattern=r"^language:(en|ru|sr)$"))
 
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, stop_query))
+    app.add_error_handler(error_handler)
     app.run_polling()
 
     return 0
