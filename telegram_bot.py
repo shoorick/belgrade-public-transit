@@ -2,6 +2,7 @@
 
 import gettext
 import logging
+import math
 import os
 import sys
 from datetime import datetime
@@ -170,7 +171,8 @@ def main() -> int:
             FROM stops
             WHERE stop_lat BETWEEN ? AND ?
                 AND stop_lon BETWEEN ? AND ?
-            ORDER BY stop_name
+            ORDER BY dist_square
+            LIMIT 30
         """
 
         with project.connect_db() as conn:
@@ -203,7 +205,7 @@ def main() -> int:
             dist_square = row[4]
             dist_m = math.sqrt(dist_square)
             code_part = f"{stop_code} " if stop_code else ""
-            lines.append(f"{code_part}{stop_name} ({stop_lat:.5f}, {stop_lon:.5f})")
+            lines.append(f"{code_part}{stop_name} — {dist_m:.0f} m")
 
         await update.message.reply_text("\n".join(lines))
 
