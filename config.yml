@@ -10,5 +10,6 @@ train:
   expire: 86400
 geo:
   bbox:
-    lat_delta: 0.00833
-    lon_delta: 0.01235
+    width: 1500
+    height: 1500
+  meters_per_degree_lat: 111320

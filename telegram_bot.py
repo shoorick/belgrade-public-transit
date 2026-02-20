@@ -38,8 +38,9 @@ def main() -> int:
     default_interval = 30
 
     config = read_config(root_dir)
-    lat_delta = float(config.geo.bbox.lat_delta)
-    lon_delta = float(config.geo.bbox.lon_delta)
+    bbox_width_m = float(config.geo.bbox.width)
+    bbox_height_m = float(config.geo.bbox.height)
+    meters_per_degree_lat = float(config.geo.meters_per_degree_lat)
 
     def normalize_language(value: str) -> str | None:
         v = value.strip().lower()
@@ -148,13 +149,24 @@ def main() -> int:
         lat = update.message.location.latitude
         lon = update.message.location.longitude
 
+        meters_per_degree_lon = meters_per_degree_lat * math.cos(math.radians(lat))
+
+        lat_delta = bbox_height_m / (2.0 * meters_per_degree_lat)
+        lon_delta = bbox_width_m / (2.0 * meters_per_degree_lon)
+
         lat_min = lat - lat_delta
         lat_max = lat + lat_delta
         lon_min = lon - lon_delta
         lon_max = lon + lon_delta
 
         sql = """
-            SELECT stop_code, stop_name, stop_lat, stop_lon
+            SELECT
+                stop_code,
+                stop_name,
+                stop_lat,
+                stop_lon,
+                ((stop_lat - ?) * (stop_lat - ?) * ? * ?)
+                + ((stop_lon - ?) * (stop_lon - ?) * ? * ?) AS dist_square
             FROM stops
             WHERE stop_lat BETWEEN ? AND ?
                 AND stop_lon BETWEEN ? AND ?
@@ -162,18 +174,34 @@ def main() -> int:
         """
 
         with project.connect_db() as conn:
-            rows = conn.execute(sql, (lat_min, lat_max, lon_min, lon_max)).fetchall()
+            rows = conn.execute(
+                sql,
+                (
+                    lat,
+                    lat,
+                    meters_per_degree_lat,
+                    meters_per_degree_lat,
+                    lon,
+                    lon,
+                    meters_per_degree_lon,
+                    meters_per_degree_lon,
+                    lat_min,
+                    lat_max,
+                    lon_min,
+                    lon_max,
+                ),
+            ).fetchall()
 
         if not rows:
             await update.message.reply_text(_("No stops found nearby"))
             return
 
         lines: list[str] = []
-        for row in rows[:30]:
+        for row in rows:
             stop_code = row[0]
             stop_name = row[1]
-            stop_lat = row[2]
-            stop_lon = row[3]
+            dist_square = row[4]
+            dist_m = math.sqrt(dist_square)
             code_part = f"{stop_code} " if stop_code else ""
             lines.append(f"{code_part}{stop_name} ({stop_lat:.5f}, {stop_lon:.5f})")
 
