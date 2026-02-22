@@ -56,9 +56,9 @@ Schedule for Kalemegdan
 Nearest 30 minutes schedule for a stop name at a specific time:
 ```bash
 ./schedule.py -n Kalemegdan -d '2026-01-02 12:34'
-# or
+# or relative time in English
 ./schedule.py -n Kalemegdan -d 'in 2 hours'
-# or
+# or in Russian
 ./schedule.py -n Kalemegdan -d 'через 3 часа'
 ```
 
